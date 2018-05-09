@@ -1,24 +1,27 @@
 package com.mt.reactive.service.impl;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.mt.reactive.DAO.GitUserDAO;
 import com.mt.reactive.entity.GitUser;
-import com.mt.reactive.entity.GitUserStream;
 import com.mt.reactive.service.GitUserService;
 import com.mt.reactive.util.SystemInformationUtil;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "rawtypes" })
 @Service
 public class GitUserServiceImpl implements GitUserService {
 
@@ -34,34 +37,53 @@ public class GitUserServiceImpl implements GitUserService {
 	}
 
 	@Override
-	public Flux<GitUserStream> getAllUser() {
-		return gitUserDAO.findAll().flatMap(gitUser -> {
-			Flux<Long> interval = Flux.interval(Duration.ofSeconds(2));
-			Flux<GitUserStream> gitUserFlux = Flux
-					.fromStream(Stream.generate(() -> GitUserStream.getInstance().GitUser(gitUser)));
-			return Flux.zip(interval, gitUserFlux).map(Tuple2::getT2);
-		});
-	}
-
-	@Override
-	public Mono<GitUser> getUserbyId(Long Id) {
-		return gitUserDAO.findById(Id);
-	}
-
-	@Override
-	public void SaveUser(List<GitUser> gitUser) {
-		gitUserDAO.deleteAll();
-		gitUser.stream().forEach(user -> {
-			gitUserDAO.save(user).subscribe(System.out::println);
-		});
-
+	public Flux<GitUser> getAllUser() {
+		return Flux.fromIterable(gitUserDAO.findAll()).delayElements(Duration.ofSeconds(1));
 	}
 
 	@Override
 	public List<GitUser> getUserFromGit() {
-		List<GitUser> list = restTemplate.getForObject(SystemInformationUtil.GIT_URL + "?since=100", List.class);
-		list.addAll(restTemplate.getForObject(SystemInformationUtil.GIT_URL + "?since=131", List.class));
+		ParameterizedTypeReference<List<GitUser>> responseType = new ParameterizedTypeReference<List<GitUser>>() {
+		};
+
+		long Id = 0;
+		if (gitUserDAO.getMaxUserId() != null) {
+			Id = gitUserDAO.getMaxUserId();
+		}
+
+		RequestEntity requestEntity = null;
+		List<GitUser> list = new ArrayList<>();
+		for (int i = 0; i < 50; i++) {
+			try {
+				requestEntity = RequestEntity
+						.get(new URI(SystemInformationUtil.GIT_URL + "?since=" + Id + SystemInformationUtil.OAUTH_URL))
+						.accept(MediaType.APPLICATION_JSON).build();
+				list.addAll(restTemplate.exchange(requestEntity, responseType).getBody());
+				Id = list.get(list.size() - 1).getUserId();
+
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+			}
+		}
+
 		return list;
+	}
+
+	@Override
+	public Long saveAllUser(List<GitUser> gitUser) {
+
+		gitUser.stream().forEach(user -> {
+			gitUserDAO.save(user);
+		});
+
+		return (long) gitUser.size();
+	}
+
+	@Override
+	public Optional<GitUser> getUserbyId(Long Id) {
+
+		return gitUserDAO.findById(Id);
+
 	}
 
 }
