@@ -1,2 +1,2 @@
 # Spring-boot-reactive
-Spring boot 2.1.0 reactive Programming with MongoDB
+Spring boot 2.0.1 reactive Programming with MySQL DB
