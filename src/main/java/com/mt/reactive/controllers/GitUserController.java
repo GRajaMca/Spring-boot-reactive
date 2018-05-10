@@ -1,4 +1,4 @@
-package com.mt.reactive.controllers;
+/*package com.mt.reactive.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -9,6 +9,7 @@ import com.mt.reactive.entity.GitUser;
 import com.mt.reactive.service.GitUserService;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class GitUserController {
@@ -27,10 +28,8 @@ public class GitUserController {
 	}
 
 	@GetMapping(value = "/dataLoad")
-	public String loadData() {
-		long size = gitUserService.saveAllUser(gitUserService.getUserFromGit());
-		return size + " --> data are loaded from GitHub API to Local DataBase";
-
+	public Mono<String> loadData() {
+		return gitUserService.saveAllUser(gitUserService.getUserFromGit());
 	}
 
-}
+}*/

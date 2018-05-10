@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.mt.reactive.entity.GitUser;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public interface GitUserService {
 
@@ -15,5 +16,5 @@ public interface GitUserService {
 
 	public List<GitUser> getUserFromGit();
 
-	public Long saveAllUser(List<GitUser> list);
+	public Mono<String> saveAllUser(List<GitUser> list);
 }

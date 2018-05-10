@@ -20,6 +20,7 @@ import com.mt.reactive.service.GitUserService;
 import com.mt.reactive.util.SystemInformationUtil;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @SuppressWarnings({ "rawtypes" })
 @Service
@@ -53,7 +54,7 @@ public class GitUserServiceImpl implements GitUserService {
 
 		RequestEntity requestEntity = null;
 		List<GitUser> list = new ArrayList<>();
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 500; i++) {
 			try {
 				requestEntity = RequestEntity
 						.get(new URI(SystemInformationUtil.GIT_URL + "?since=" + Id + SystemInformationUtil.OAUTH_URL))
@@ -70,13 +71,13 @@ public class GitUserServiceImpl implements GitUserService {
 	}
 
 	@Override
-	public Long saveAllUser(List<GitUser> gitUser) {
+	public Mono<String> saveAllUser(List<GitUser> gitUser) {
 
 		gitUser.stream().forEach(user -> {
 			gitUserDAO.save(user);
 		});
 
-		return (long) gitUser.size();
+		return Mono.just(gitUser.size() + " --> data are loaded from GitHub API to Local DataBase");
 	}
 
 	@Override
